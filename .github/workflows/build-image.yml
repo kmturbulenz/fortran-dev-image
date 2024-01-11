@@ -18,7 +18,7 @@ jobs:
         target-image: ["intel-impi-image", "gnu-ompi-image"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 2
 
@@ -41,7 +41,7 @@ jobs:
 
     - name: Docker meta
       id: meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         images: |
           ghcr.io/kmturbulenz/${{ matrix.target-image }}
@@ -50,14 +50,14 @@ jobs:
           type=ref,event=tag
           type=sha
 
-    - uses: docker/login-action@v2
+    - uses: docker/login-action@v3
       name: Login to Github Packages
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: docker/build-push-action@v3
+    - uses: docker/build-push-action@v4
       name: Build image and push to GitHub Container Registry
       with:
         context: .

@@ -1,45 +1,45 @@
-FROM centos:7 AS build-base-image
+FROM oraclelinux:8 AS build-base-image
 LABEL maintainer="Håkon Strandenes <h.strandenes@km-turbulenz.no>"
 SHELL ["/bin/bash", "-c"]
 
-# Note: "yum check-update" return code 100 if there are packages to be updated,
+# Note: "dnf check-update" return code 100 if there are packages to be updated,
 # hence the ";" instead of "&&"
 #     vim-common for xxd (not obvious)
-RUN yum check-update ; \
-    yum -y update && \
-    yum -y install bash-completion \
+#
+# oracle-epel-release-el8 provides the EPEL repo information. This repo is
+# neccesary for patchelf and the_silver_searcher - therefore these
+# are installed in a second call to dnf
+RUN dnf check-update ; \
+    dnf -y update && \
+    dnf -y install bash-completion \
                    bzip2 \
-                   centos-release-scl \
-                   epel-release \
                    file \
+                   findutils \
+                   gdb \
+                   git \
                    libcurl-devel \
+                   make \
+                   oracle-epel-release-el8 \
                    patch \
+                   procps-ng \
+                   python3.11 \
+                   python3.11-devel \
+                   python3.11-pip \
+                   python3.11-pip-wheel \
                    rsync \
                    time \
                    unzip \
                    vim-common \
                    wget \
                    which \
-                   zlib-devel && \
-    yum -y install patchelf rh-python38 rh-python38-python-devel && \
-    yum -y update && \
-    yum -y --enablerepo="epel" install the_silver_searcher && \
-    yum clean all
-
-# Install an updated Git from ius.io and git-lfs from packagecloud.io
-#
-# rh-git218 does not work with Github actions (too old)
-# rh-git227 does not have Git LFS
-# so therefore using this approach
-RUN yum -y install https://repo.ius.io/ius-release-el7.rpm && \
-    yum check-update ; \
-    yum -y install git236 && \
-    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | bash && \
-    yum -y install git-lfs && \
-    yum clean all
+                   zlib-devel \
+                   zstd && \
+    dnf -y install patchelf the_silver_searcher && \
+    dnf clean all && \
+    alternatives --set python3 /usr/bin/python3.11
 
 # Fetch and install updated CMake in /usr/local
-ENV CMAKE_VER="3.23.2"
+ENV CMAKE_VER="3.28.1"
 ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
 RUN mkdir /tmp/cmake-install && \
     cd /tmp/cmake-install && \
@@ -60,9 +60,6 @@ RUN mkdir /tmp/ninja-install && \
 ENV HDF5_VER="1.14.0"
 COPY build-hdf5.sh /opt/
 
-# Create bashrc file
-RUN echo "source scl_source enable rh-python38" >> /opt/bashrc
-
 
 # ---------------------------------------------------------------------------- #
 # Intel oneAPI compilers, Intel MPI image
@@ -73,13 +70,13 @@ LABEL description="Intel compilers with Intel MPI and HDF5 image for building Fo
 COPY oneAPI.repo /etc/yum.repos.d/
 # Cherry-pick packages to minimize image size
 #     instead of:
-#     yum -y install intel-basekit intel-hpckit
+#     dnf -y install intel-basekit intel-hpckit
 # Package ref: https://oneapi-src.github.io/oneapi-ci/#linux-yum-dnf
-RUN yum -y install intel-oneapi-compiler-dpcpp-cpp-2022.2.1 \
-                   intel-oneapi-compiler-fortran-2022.2.1 \
-                   intel-oneapi-mpi-devel-2021.7.1 \
-                   gcc gcc-c++ make && \
-    yum clean all
+RUN dnf -y install intel-oneapi-compiler-dpcpp-cpp-2024.0 \
+                   intel-oneapi-compiler-fortran-2024.0 \
+                   intel-oneapi-mpi-devel-2021.11 \
+                   gcc gcc-c++ && \
+    dnf clean all
 
 # CPU architecture for optimizations and default compiler flags
 ENV CC="icx"
@@ -106,12 +103,14 @@ RUN echo "source /opt/intel/oneapi/setvars.sh" >> /opt/bashrc
 FROM build-base-image AS gnu-ompi-image
 LABEL description="GNU compilers with OpenMPI and HDF5 image for building Fortran applications"
 
-# Ref. https://superuser.com/questions/784451/centos-on-docker-how-to-install-doc-files
-RUN sed -i '/nodocs/d' /etc/yum.conf
-
-# Install GNU compilers and UCX
-RUN yum -y install devtoolset-11 devtoolset-11-libasan-devel devtoolset-11-libubsan-devel ucx-devel && \
-    yum clean all
+# Install GNU compilers and development files for compiling OpenMPI
+# SLES 15 SP3 libraries:
+#   - ucx: 1.9.0
+#   - libpsm2: 11.2.185
+#   - libfabric: 1.11.2
+RUN dnf -y install gcc-toolset-13 gcc-toolset-13-gcc-gfortran ucx-devel-1.9.0-1.el8 && \
+    dnf -y --enablerepo=ol8_codeready_builder install libpsm2-devel-11.2.185-1.el8 libfabric-devel-1.11.2-1.el8 && \
+    dnf clean all
 
 # CPU architecture for optimizations and default compiler flags
 ENV CC="gcc"
@@ -125,16 +124,16 @@ ENV FFLAGS="-march=${CPU_ARCH}"
 ENV FCFLAGS=$FFLAGS
 
 # Download and build OpenMPI
-ENV OMPI_VER="4.1.4"
+ENV OMPI_VER="4.1.6"
 COPY build-openmpi.sh /opt/
-RUN source scl_source enable devtoolset-11 && /opt/build-openmpi.sh
+RUN source scl_source enable gcc-toolset-13 && /opt/build-openmpi.sh
 ENV MPI_HOME="/opt/openmpi/${OMPI_VER}/install"
 ENV PATH="${MPI_HOME}/bin:${PATH}"
 
 # Download and build HDF5
-RUN source scl_source enable devtoolset-11 && /opt/build-hdf5.sh
+RUN source scl_source enable gcc-toolset-13 && /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
 # Update bashrc file
-RUN echo "source scl_source enable devtoolset-11" >> /opt/bashrc
+RUN echo "source scl_source enable gcc-toolset-13" >> /opt/bashrc

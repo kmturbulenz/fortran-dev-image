@@ -21,9 +21,11 @@ cmake \
     -GNinja \
     -DCMAKE_INSTALL_PREFIX=$HDF5_ROOT_DIR/install \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DHDF5_BUILD_FORTRAN=ON \
     -DBUILD_TESTING=OFF \
+    -DONLY_SHARED_LIBS=ON \
+    -DHDF5_BUILD_FORTRAN=ON \
     -DHDF5_ENABLE_Z_LIB_SUPPORT=OFF \
+    -DHDF5_ENABLE_SZIP_SUPPORT=OFF \
     -DHDF5_ENABLE_PARALLEL=ON \
     -DHDF5_ENABLE_TRACE=ON \
     -DHDF5_ENABLE_DEPRECATED_SYMBOLS=OFF \
@@ -31,3 +33,11 @@ cmake \
     -DHDF5_BUILD_HL_LIB=OFF \
     ../source 2>&1 | tee cmake.log
 ninja install 2>&1 | tee ninja.log
+
+# Remove '-shared' suffix from HDF5 tool names
+# https://forum.hdfgroup.org/t/tools-have-static-linking-when-built-with-cmake/11926
+cd $HDF5_ROOT_DIR/install/bin
+for i in *-shared; do
+    mv $i ${i%-shared}
+done
+cd -
