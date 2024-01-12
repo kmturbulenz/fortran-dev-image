@@ -17,6 +17,7 @@ RUN dnf check-update ; \
                    findutils \
                    gdb \
                    git \
+                   git-lfs \
                    libcurl-devel \
                    make \
                    oracle-epel-release-el8 \
