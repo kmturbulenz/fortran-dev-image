@@ -40,7 +40,7 @@ RUN dnf check-update ; \
     alternatives --set python3 /usr/bin/python3.11
 
 # Fetch and install updated CMake in /usr/local
-ENV CMAKE_VER="3.28.1"
+ENV CMAKE_VER="3.29.2"
 ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
 RUN mkdir /tmp/cmake-install && \
     cd /tmp/cmake-install && \
@@ -50,7 +50,7 @@ RUN mkdir /tmp/cmake-install && \
     rm -rf /tmp/cmake-install
 
 # Fetch and install updated Ninja-build in /usr/local
-ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-linux.zip"
+ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.12.0/ninja-linux.zip"
 RUN mkdir /tmp/ninja-install && \
     cd /tmp/ninja-install && \
     wget --no-verbose $NINJA_URL && \
@@ -58,7 +58,7 @@ RUN mkdir /tmp/ninja-install && \
     cd / && \
     rm -rf /tmp/ninja-install
 
-ENV HDF5_VER="1.14.0"
+ENV HDF5_VER="1.14.4-1"
 COPY build-hdf5.sh /opt/
 
 
@@ -73,9 +73,9 @@ COPY oneAPI.repo /etc/yum.repos.d/
 #     instead of:
 #     dnf -y install intel-basekit intel-hpckit
 # Package ref: https://oneapi-src.github.io/oneapi-ci/#linux-yum-dnf
-RUN dnf -y install intel-oneapi-compiler-dpcpp-cpp-2024.0 \
-                   intel-oneapi-compiler-fortran-2024.0 \
-                   intel-oneapi-mpi-devel-2021.11 \
+RUN dnf -y install intel-oneapi-compiler-dpcpp-cpp-2024.1 \
+                   intel-oneapi-compiler-fortran-2024.1 \
+                   intel-oneapi-mpi-devel-2021.12 \
                    gcc gcc-c++ && \
     dnf clean all
 
