@@ -58,7 +58,7 @@ RUN mkdir /tmp/ninja-install && \
     cd / && \
     rm -rf /tmp/ninja-install
 
-ENV HDF5_VER="1.14.4-1"
+ENV HDF5_VER="1.14.4-2"
 COPY build-hdf5.sh /opt/
 
 

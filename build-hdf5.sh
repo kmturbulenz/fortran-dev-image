@@ -4,7 +4,7 @@
 set -o errexit
 set -o pipefail
 
-HDF5_URL="https://github.com/HDFGroup/hdf5/releases/download/hdf5-${HDF5_VER//-/.}/hdf5-${HDF5_VER}.tar.gz"
+HDF5_URL="https://github.com/HDFGroup/hdf5/releases/download/hdf5_${HDF5_VER//-/.}/hdf5-${HDF5_VER}.tar.gz"
 HDF5_ROOT_DIR="/opt/hdf5/${HDF5_VER}"
 
 mkdir -p $HDF5_ROOT_DIR
