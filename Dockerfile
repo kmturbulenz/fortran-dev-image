@@ -23,10 +23,10 @@ RUN dnf check-update ; \
                    oracle-epel-release-el8 \
                    patch \
                    procps-ng \
-                   python3.11 \
-                   python3.11-devel \
-                   python3.11-pip \
-                   python3.11-pip-wheel \
+                   python3.12 \
+                   python3.12-devel \
+                   python3.12-pip \
+                   python3.12-pip-wheel \
                    rsync \
                    time \
                    unzip \
@@ -37,10 +37,13 @@ RUN dnf check-update ; \
                    zstd && \
     dnf -y install patchelf the_silver_searcher && \
     dnf clean all && \
-    alternatives --set python3 /usr/bin/python3.11
+    alternatives --set python3 /usr/bin/python3.12
+
+# Install numpy, scipy, matplotlib, h5py for running MGLET testcases
+RUN python3 -m pip install --no-cache-dir numpy scipy matplotlib h5py
 
 # Fetch and install updated CMake in /usr/local
-ENV CMAKE_VER="3.29.2"
+ENV CMAKE_VER="3.30.2"
 ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
 RUN mkdir /tmp/cmake-install && \
     cd /tmp/cmake-install && \
@@ -50,7 +53,7 @@ RUN mkdir /tmp/cmake-install && \
     rm -rf /tmp/cmake-install
 
 # Fetch and install updated Ninja-build in /usr/local
-ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.12.0/ninja-linux.zip"
+ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
 RUN mkdir /tmp/ninja-install && \
     cd /tmp/ninja-install && \
     wget --no-verbose $NINJA_URL && \
@@ -58,7 +61,7 @@ RUN mkdir /tmp/ninja-install && \
     cd / && \
     rm -rf /tmp/ninja-install
 
-ENV HDF5_VER="1.14.4-2"
+ENV HDF5_VER="1.14.4-3"
 COPY build-hdf5.sh /opt/
 
 
@@ -138,3 +141,49 @@ ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
 # Update bashrc file
 RUN echo "source scl_source enable gcc-toolset-13" >> /opt/bashrc
+
+
+# ---------------------------------------------------------------------------- #
+# LLVM compilers (clang, clang++, flang-new), MPICH image
+FROM build-base-image AS llvm-mpich-image
+LABEL description="LLVM compilers with MPICH and HDF5 image for building Fortran applications"
+
+# We do not install UCX - MPICH builds embedded UCX instead.
+RUN dnf -y install gcc gcc-c++ && \
+    dnf clean all
+
+# Build LLVM compilers (clang, clang++, flang-new)
+COPY build-llvm.sh /opt/
+RUN /opt/build-llvm.sh
+
+# CPU architecture for optimizations and default compiler flags
+ENV CC="clang"
+ENV CXX="clang++"
+ENV FC="flang-new"
+
+ENV CPU_ARCH="x86-64-v2"
+ENV CFLAGS="-march=${CPU_ARCH}"
+ENV CXXFLAGS="-march=${CPU_ARCH}"
+ENV FFLAGS="-march=${CPU_ARCH}"
+ENV FCFLAGS=$FFLAGS
+
+ENV LLVM_ROOT="/opt/llvm/install"
+ENV PATH="${LLVM_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${LLVM_ROOT}:${LD_LIBRARY_PATH}"
+
+# Download and build MPICH
+# The FCFLAGS are required until this is resolved:
+# https://github.com/llvm/llvm-project/issues/95990
+ENV MPICH_VER="4.2.2"
+COPY build-mpich.sh /opt/
+RUN FCFLAGS="$FCFLAGS -mmlir -allow-assumed-rank" /opt/build-mpich.sh
+ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
+ENV PATH="${MPI_HOME}/bin:${PATH}"
+
+# Download and build HDF5
+RUN /opt/build-hdf5.sh
+ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
+ENV PATH="${HDF5_ROOT}/bin:${PATH}"
+
+# Update bashrc file
+RUN echo "" >> /opt/bashrc
