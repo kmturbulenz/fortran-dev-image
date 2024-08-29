@@ -1,4 +1,5 @@
 name: Docker image build
+run-name: Build ${{ inputs.image }}
 
 on:
   workflow_call:
@@ -33,6 +34,7 @@ on:
 jobs:
   build-single-image:
 
+    name: Build ${{ inputs.image }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
 
