@@ -1,0 +1,21 @@
+name: Build all docker images
+
+on:
+  workflow_dispatch:
+    inputs:
+      push_image:
+        type: boolean
+        description: Push image to package registry
+        required: true
+        default: true
+
+jobs:
+  build-all-images:
+    strategy:
+      matrix:
+        image: ["intel-impi-image", "gnu-ompi-image", "llvm-mpich-image"]
+    uses: ./.github/workflows/build-single-image.yml
+    with:
+      image: ${{ matrix.image }}
+      push_image: ${{ inputs.push_image }}
+    secrets: inherit
