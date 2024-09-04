@@ -169,7 +169,7 @@ ENV FCFLAGS=$FFLAGS
 
 ENV LLVM_ROOT="/opt/llvm/install"
 ENV PATH="${LLVM_ROOT}/bin:${PATH}"
-ENV LD_LIBRARY_PATH="${LLVM_ROOT}:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="${LLVM_ROOT}/lib:${LLVM_ROOT}/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH}"
 
 # Download and build MPICH
 # The FCFLAGS are required until this is resolved:
