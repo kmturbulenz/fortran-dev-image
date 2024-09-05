@@ -1,5 +1,6 @@
 FROM oraclelinux:8 AS build-base-image
 LABEL maintainer="Håkon Strandenes <h.strandenes@km-turbulenz.no>"
+LABEL org.opencontainers.image.source="https://github.com/kmturbulenz/fortran-dev-image"
 SHELL ["/bin/bash", "-c"]
 
 # Note: "dnf check-update" return code 100 if there are packages to be updated,
@@ -182,6 +183,49 @@ ENV PATH="${MPI_HOME}/bin:${PATH}"
 
 # Download and build HDF5
 RUN /opt/build-hdf5.sh
+ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
+ENV PATH="${HDF5_ROOT}/bin:${PATH}"
+
+# Update bashrc file
+RUN echo "" >> /opt/bashrc
+
+
+# ---------------------------------------------------------------------------- #
+# NAG Fortran compiler, GNU gcc and g++ compilers, MPICH image
+FROM build-base-image AS nag-mpich-image
+LABEL description="NAG fortran compilers with GNU companion C/C++ compilers, MPICH and HDF5 image for building Fortran applications"
+
+# We do not install UCX - MPICH builds embedded UCX instead.
+RUN dnf -y install gcc gcc-c++ && \
+    dnf clean all
+
+# Install NAG compiler
+ENV NAG_VER="7219"
+COPY install-nag.sh /opt/
+RUN /opt/install-nag.sh
+
+# CPU architecture for optimizations and default compiler flags
+ENV CC="gcc"
+ENV CXX="g++"
+ENV FC="nagfor"
+
+ENV NAG_ROOT="/opt/nag"
+ENV PATH="${NAG_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${NAG_ROOT}/lib/NAG_Fortran:${LD_LIBRARY_PATH}"
+
+ENV CFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
+ENV CPPFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
+ENV CXXFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
+
+# Download and build MPICH
+ENV MPICH_VER="4.2.2"
+COPY build-mpich.sh /opt/
+RUN --mount=type=secret,id=nag_license NAG_KUSARI_FILE=/run/secrets/nag_license /opt/build-mpich.sh
+ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
+ENV PATH="${MPI_HOME}/bin:${PATH}"
+
+# Download and build HDF5
+RUN --mount=type=secret,id=nag_license NAG_KUSARI_FILE=/run/secrets/nag_license /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
