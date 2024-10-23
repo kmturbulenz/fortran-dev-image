@@ -145,7 +145,7 @@ RUN echo "source scl_source enable gcc-toolset-13" >> /opt/bashrc
 
 
 # ---------------------------------------------------------------------------- #
-# LLVM compilers (clang, clang++, flang-new), MPICH image
+# LLVM compilers (clang, clang++, flang), MPICH image
 FROM build-base-image AS llvm-mpich-image
 LABEL description="LLVM compilers with MPICH and HDF5 image for building Fortran applications"
 
@@ -153,14 +153,14 @@ LABEL description="LLVM compilers with MPICH and HDF5 image for building Fortran
 RUN dnf -y install gcc gcc-c++ && \
     dnf clean all
 
-# Build LLVM compilers (clang, clang++, flang-new)
+# Build LLVM compilers (clang, clang++, flang)
 COPY build-llvm.sh /opt/
 RUN /opt/build-llvm.sh
 
 # CPU architecture for optimizations and default compiler flags
 ENV CC="clang"
 ENV CXX="clang++"
-ENV FC="flang-new"
+ENV FC="flang"
 
 ENV CPU_ARCH="x86-64-v2"
 ENV CFLAGS="-march=${CPU_ARCH}"
@@ -173,11 +173,9 @@ ENV PATH="${LLVM_ROOT}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${LLVM_ROOT}/lib:${LLVM_ROOT}/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH}"
 
 # Download and build MPICH
-# The FCFLAGS are required until this is resolved:
-# https://github.com/llvm/llvm-project/issues/95990
-ENV MPICH_VER="4.2.2"
+ENV MPICH_VER="4.2.3"
 COPY build-mpich.sh /opt/
-RUN FCFLAGS="$FCFLAGS -mmlir -allow-assumed-rank" /opt/build-mpich.sh
+RUN /opt/build-mpich.sh
 ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
 ENV PATH="${MPI_HOME}/bin:${PATH}"
 
@@ -218,7 +216,7 @@ ENV CPPFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
 ENV CXXFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
 
 # Download and build MPICH
-ENV MPICH_VER="4.2.2"
+ENV MPICH_VER="4.2.3"
 COPY build-mpich.sh /opt/
 RUN --mount=type=secret,id=nag_license NAG_KUSARI_FILE=/run/secrets/nag_license /opt/build-mpich.sh
 ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
