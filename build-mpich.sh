@@ -4,7 +4,7 @@
 set -o errexit
 set -o pipefail
 
-MPICH_URL="https://github.com/pmodels/mpich/releases/download/v${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
+MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
 MPICH_ROOT_DIR="/opt/mpich/${MPICH_VER}"
 
 mkdir -p $MPICH_ROOT_DIR
