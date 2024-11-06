@@ -62,7 +62,6 @@ RUN mkdir /tmp/ninja-install && \
     cd / && \
     rm -rf /tmp/ninja-install
 
-ENV HDF5_VER="1.14.4-3"
 COPY build-hdf5.sh /opt/
 
 
@@ -70,6 +69,7 @@ COPY build-hdf5.sh /opt/
 # Intel oneAPI compilers, Intel MPI image
 FROM build-base-image AS intel-impi-image
 LABEL description="Intel compilers with Intel MPI and HDF5 image for building Fortran applications"
+ENV HDF5_VER="1.14.4-2"
 
 # Install Intel oneAPI packages (compiler, MPI)
 COPY oneAPI.repo /etc/yum.repos.d/
@@ -107,6 +107,7 @@ RUN echo "source /opt/intel/oneapi/setvars.sh" >> /opt/bashrc
 # GNU compilers, OpenMPI image
 FROM build-base-image AS gnu-ompi-image
 LABEL description="GNU compilers with OpenMPI and HDF5 image for building Fortran applications"
+ENV HDF5_VER="1.14.4-2"
 
 # Install GNU compilers and development files for compiling OpenMPI
 # SLES 15 SP3 libraries:
@@ -114,7 +115,7 @@ LABEL description="GNU compilers with OpenMPI and HDF5 image for building Fortra
 #   - libpsm2: 11.2.185
 #   - libfabric: 1.11.2
 RUN dnf -y install gcc-toolset-13 gcc-toolset-13-gcc-gfortran ucx-devel-1.9.0-1.el8 && \
-    dnf -y --enablerepo=ol8_codeready_builder install libpsm2-devel-11.2.185-1.el8 libfabric-devel-1.11.2-1.el8 && \
+    dnf -y --enablerepo=ol8_codeready_builder install torque-devel libpsm2-devel-11.2.185-1.el8 libfabric-devel-1.11.2-1.el8 && \
     dnf clean all
 
 # CPU architecture for optimizations and default compiler flags
@@ -129,7 +130,7 @@ ENV FFLAGS="-march=${CPU_ARCH}"
 ENV FCFLAGS=$FFLAGS
 
 # Download and build OpenMPI
-ENV OMPI_VER="4.1.6"
+ENV OMPI_VER="4.1.7"
 COPY build-openmpi.sh /opt/
 RUN source scl_source enable gcc-toolset-13 && /opt/build-openmpi.sh
 ENV MPI_HOME="/opt/openmpi/${OMPI_VER}/install"
@@ -148,6 +149,7 @@ RUN echo "source scl_source enable gcc-toolset-13" >> /opt/bashrc
 # LLVM compilers (clang, clang++, flang), MPICH image
 FROM build-base-image AS llvm-mpich-image
 LABEL description="LLVM compilers with MPICH and HDF5 image for building Fortran applications"
+ENV HDF5_VER="1.14.5"
 
 # We do not install UCX - MPICH builds embedded UCX instead.
 RUN dnf -y install gcc gcc-c++ && \
@@ -192,13 +194,14 @@ RUN echo "" >> /opt/bashrc
 # NAG Fortran compiler, GNU gcc and g++ compilers, MPICH image
 FROM build-base-image AS nag-mpich-image
 LABEL description="NAG fortran compilers with GNU companion C/C++ compilers, MPICH and HDF5 image for building Fortran applications"
+ENV HDF5_VER="1.14.5"
 
 # We do not install UCX - MPICH builds embedded UCX instead.
 RUN dnf -y install gcc gcc-c++ && \
     dnf clean all
 
 # Install NAG compiler
-ENV NAG_VER="7219"
+ENV NAG_VER="7220"
 COPY install-nag.sh /opt/
 RUN /opt/install-nag.sh
 

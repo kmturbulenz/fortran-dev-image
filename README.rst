@@ -7,7 +7,7 @@ with basic build tools (CMake, Ninja). These images can then be used to compile
 Fortran applications that depend on MPI and HDF5.
 
 The main purpose is to serve the
-`MGLET CFD<https://github.com/kmturbulenz/mglet-base>`_ code with
+`MGLET <https://github.com/kmturbulenz/mglet-base>`_ CFD code with
 images it can use in its building and testing framework,
 but it can of be used for other Fortran applications as well.
 

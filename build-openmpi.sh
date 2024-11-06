@@ -26,5 +26,6 @@ cd source
     --with-ucx \
     --with-psm2 \
     --with-libfabric \
+    --with-tm \
     2>&1 | tee configure.log
 make -j install 2>&1 | tee make.log
