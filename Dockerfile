@@ -114,7 +114,7 @@ ENV HDF5_VER="1.14.4-2"
 #   - ucx: 1.9.0
 #   - libpsm2: 11.2.185
 #   - libfabric: 1.11.2
-RUN dnf -y install gcc-toolset-13 gcc-toolset-13-gcc-gfortran ucx-devel-1.9.0-1.el8 && \
+RUN dnf -y install gcc-toolset-13 gcc-toolset-13-gcc-gfortran gcc-toolset-13-libubsan-devel ucx-devel-1.9.0-1.el8 && \
     dnf -y --enablerepo=ol8_codeready_builder install torque-devel libpsm2-devel-11.2.185-1.el8 libfabric-devel-1.11.2-1.el8 && \
     dnf clean all
 

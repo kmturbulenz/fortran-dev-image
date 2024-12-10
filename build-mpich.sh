@@ -20,6 +20,7 @@ cd source
 
 ./configure \
     --prefix=$MPICH_ROOT_DIR/install \
+    --disable-static \
     --with-pic \
     --with-device=ch4:ucx \
     2>&1 | tee configure.log
