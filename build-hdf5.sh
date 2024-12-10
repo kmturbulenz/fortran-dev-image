@@ -4,7 +4,7 @@
 set -o errexit
 set -o pipefail
 
-HDF5_URL="https://github.com/HDFGroup/hdf5/releases/download/hdf5_${HDF5_VER//-/.}/hdf5-${HDF5_VER}.tar.gz"
+HDF5_URL="https://github.com/HDFGroup/hdf5/releases/download/${HDF5_VER}/hdf5-${HDF5_VER}.tar.gz"
 HDF5_ROOT_DIR="/opt/hdf5/${HDF5_VER}"
 
 mkdir -p $HDF5_ROOT_DIR
@@ -19,8 +19,9 @@ mv hdf5-$HDF5_VER source
 # $NAG_ROOT is set
 if [ -n "$NAG_ROOT" ]; then
     # NAG Fortran compiler + CMake require you to use the MPI compiler wrappers
-    FC="mpifort"
-    CC="mpicc"
+    export FC="mpifort"
+    export CC="mpicc"
+    patch source/CMakeLists.txt /opt/HDF5-NAG-Disable-threads.patch
 fi
 
 mkdir build
@@ -30,9 +31,9 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=$HDF5_ROOT_DIR/install \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DBUILD_TESTING=OFF \
-    -DONLY_SHARED_LIBS=ON \
+    -DBUILD_STATIC_LIBS=OFF \
     -DHDF5_BUILD_FORTRAN=ON \
-    -DHDF5_ENABLE_Z_LIB_SUPPORT=OFF \
+    -DHDF5_ENABLE_ZLIB_SUPPORT=OFF \
     -DHDF5_ENABLE_SZIP_SUPPORT=OFF \
     -DHDF5_ENABLE_PARALLEL=ON \
     -DHDF5_ENABLE_TRACE=ON \

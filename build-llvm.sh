@@ -15,7 +15,8 @@ cd build
 cmake -GNinja \
     -DCMAKE_BUILD_TYPE="Release" \
     -DCMAKE_INSTALL_PREFIX="$LLVM_ROOT_DIR/install" \
-    -DLLVM_ENABLE_PROJECTS="clang;lld;flang;openmp" \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;flang" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;openmp;flang-rt" \
     -DLLVM_TARGETS_TO_BUILD="X86" \
     -DLLVM_ENABLE_RTTI="ON" \
     ../llvm 2>&1 | tee cmake.log

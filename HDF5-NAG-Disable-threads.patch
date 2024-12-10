@@ -1,0 +1,12 @@
+--- CMakeLists-0.txt	2025-11-11 01:00:49.000000000 +0100
++++ CMakeLists.txt	2026-01-13 09:26:10.556920528 +0100
+@@ -839,7 +839,8 @@
+ 
+ # Determine if a threading package is available on this system
+ set (THREADS_PREFER_PTHREAD_FLAG ON)
+-find_package (Threads)
++#find_package (Threads)
++set(Threads_FOUND FALSE)
+ if (Threads_FOUND)
+   set (H5_HAVE_THREADS 1)
+   set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
