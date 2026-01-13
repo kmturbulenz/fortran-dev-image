@@ -13,6 +13,7 @@ SHELL ["/bin/bash", "-c"]
 RUN dnf check-update ; \
     dnf -y update && \
     dnf -y install bash-completion \
+                   bc \
                    bzip2 \
                    file \
                    findutils \
@@ -44,7 +45,7 @@ RUN dnf check-update ; \
 RUN python3 -m pip install --no-cache-dir numpy scipy matplotlib h5py
 
 # Fetch and install updated CMake in /usr/local
-ENV CMAKE_VER="3.30.2"
+ENV CMAKE_VER="3.31.9"
 ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
 RUN mkdir /tmp/cmake-install && \
     cd /tmp/cmake-install && \
@@ -54,7 +55,7 @@ RUN mkdir /tmp/cmake-install && \
     rm -rf /tmp/cmake-install
 
 # Fetch and install updated Ninja-build in /usr/local
-ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
+ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-linux.zip"
 RUN mkdir /tmp/ninja-install && \
     cd /tmp/ninja-install && \
     wget --no-verbose $NINJA_URL && \
@@ -63,13 +64,16 @@ RUN mkdir /tmp/ninja-install && \
     rm -rf /tmp/ninja-install
 
 COPY build-hdf5.sh /opt/
+COPY build-imb.sh /opt/
+
+ENV HDF5_VER="2.0.0"
+ENV IMB_VER="2021.10"
 
 
 # ---------------------------------------------------------------------------- #
 # Intel oneAPI compilers, Intel MPI image
 FROM build-base-image AS intel-impi-image
 LABEL description="Intel compilers with Intel MPI and HDF5 image for building Fortran applications"
-ENV HDF5_VER="1.14.4-2"
 
 # Install Intel oneAPI packages (compiler, MPI)
 COPY oneAPI.repo /etc/yum.repos.d/
@@ -77,9 +81,9 @@ COPY oneAPI.repo /etc/yum.repos.d/
 #     instead of:
 #     dnf -y install intel-basekit intel-hpckit
 # Package ref: https://oneapi-src.github.io/oneapi-ci/#linux-yum-dnf
-RUN dnf -y install intel-oneapi-compiler-dpcpp-cpp-2024.1 \
-                   intel-oneapi-compiler-fortran-2024.1 \
-                   intel-oneapi-mpi-devel-2021.12 \
+RUN dnf -y install intel-oneapi-compiler-dpcpp-cpp-2025.3 \
+                   intel-oneapi-compiler-fortran-2025.3 \
+                   intel-oneapi-mpi-devel-2021.17 \
                    gcc gcc-c++ && \
     dnf clean all
 
@@ -99,6 +103,9 @@ RUN source /opt/intel/oneapi/setvars.sh && /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
+# Download and build Intel MPI Benchmarks
+RUN source /opt/intel/oneapi/setvars.sh && CC=mpiicx /opt/build-imb.sh
+
 # Update bashrc file
 RUN echo "source /opt/intel/oneapi/setvars.sh" >> /opt/bashrc
 
@@ -107,15 +114,19 @@ RUN echo "source /opt/intel/oneapi/setvars.sh" >> /opt/bashrc
 # GNU compilers, OpenMPI image
 FROM build-base-image AS gnu-ompi-image
 LABEL description="GNU compilers with OpenMPI and HDF5 image for building Fortran applications"
-ENV HDF5_VER="1.14.4-2"
 
 # Install GNU compilers and development files for compiling OpenMPI
+# SLES packages: https://scc.suse.com/packages
 # SLES 15 SP3 libraries:
 #   - ucx: 1.9.0
 #   - libpsm2: 11.2.185
 #   - libfabric: 1.11.2
-RUN dnf -y install gcc-toolset-13 gcc-toolset-13-gcc-gfortran gcc-toolset-13-libubsan-devel ucx-devel-1.9.0-1.el8 && \
-    dnf -y --enablerepo=ol8_codeready_builder install torque-devel libpsm2-devel-11.2.185-1.el8 libfabric-devel-1.11.2-1.el8 && \
+# SLES 15 SP6 libraries:
+#   - ucx: 1.15.0
+#   - libpsm2: 12.0.1
+#   - libfabric: 1.20.0
+RUN dnf -y install gcc-toolset-15 gcc-toolset-15-gcc-gfortran gcc-toolset-15-libubsan-devel ucx-devel-1.15.0-2.el8 && \
+    dnf -y --enablerepo=ol8_codeready_builder install torque-devel libpsm2-devel-11.2.230-1.el8.1 libfabric-devel-1.18.0-1.el8 && \
     dnf clean all
 
 # CPU architecture for optimizations and default compiler flags
@@ -130,26 +141,28 @@ ENV FFLAGS="-march=${CPU_ARCH}"
 ENV FCFLAGS=$FFLAGS
 
 # Download and build OpenMPI
-ENV OMPI_VER="4.1.7"
+ENV OMPI_VER="5.0.9"
 COPY build-openmpi.sh /opt/
-RUN source scl_source enable gcc-toolset-13 && /opt/build-openmpi.sh
+RUN source scl_source enable gcc-toolset-15 && /opt/build-openmpi.sh
 ENV MPI_HOME="/opt/openmpi/${OMPI_VER}/install"
 ENV PATH="${MPI_HOME}/bin:${PATH}"
 
 # Download and build HDF5
-RUN source scl_source enable gcc-toolset-13 && /opt/build-hdf5.sh
+RUN source scl_source enable gcc-toolset-15 && /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
+# Download and build Intel MPI Benchmarks
+RUN source scl_source enable gcc-toolset-15 && CC=mpicc /opt/build-imb.sh
+
 # Update bashrc file
-RUN echo "source scl_source enable gcc-toolset-13" >> /opt/bashrc
+RUN echo "source scl_source enable gcc-toolset-15" >> /opt/bashrc
 
 
 # ---------------------------------------------------------------------------- #
 # LLVM compilers (clang, clang++, flang), MPICH image
 FROM build-base-image AS llvm-mpich-image
 LABEL description="LLVM compilers with MPICH and HDF5 image for building Fortran applications"
-ENV HDF5_VER="1.14.5"
 
 # We do not install UCX - MPICH builds embedded UCX instead.
 RUN dnf -y install gcc gcc-c++ && \
@@ -175,7 +188,7 @@ ENV PATH="${LLVM_ROOT}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="${LLVM_ROOT}/lib:${LLVM_ROOT}/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH}"
 
 # Download and build MPICH
-ENV MPICH_VER="4.2.3"
+ENV MPICH_VER="4.3.2"
 COPY build-mpich.sh /opt/
 RUN /opt/build-mpich.sh
 ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
@@ -186,6 +199,9 @@ RUN /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
 
+# Download and build Intel MPI Benchmarks
+RUN CC=mpicc /opt/build-imb.sh
+
 # Update bashrc file
 RUN echo "" >> /opt/bashrc
 
@@ -194,14 +210,13 @@ RUN echo "" >> /opt/bashrc
 # NAG Fortran compiler, GNU gcc and g++ compilers, MPICH image
 FROM build-base-image AS nag-mpich-image
 LABEL description="NAG fortran compilers with GNU companion C/C++ compilers, MPICH and HDF5 image for building Fortran applications"
-ENV HDF5_VER="1.14.5"
 
 # We do not install UCX - MPICH builds embedded UCX instead.
 RUN dnf -y install gcc gcc-c++ && \
     dnf clean all
 
 # Install NAG compiler
-ENV NAG_VER="7220"
+ENV NAG_VER="7242"
 COPY install-nag.sh /opt/
 RUN /opt/install-nag.sh
 
@@ -219,16 +234,20 @@ ENV CPPFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
 ENV CXXFLAGS="-I$NAG_ROOT/lib/NAG_Fortran"
 
 # Download and build MPICH
-ENV MPICH_VER="4.2.3"
+ENV MPICH_VER="4.3.2"
 COPY build-mpich.sh /opt/
 RUN --mount=type=secret,id=nag_license NAG_KUSARI_FILE=/run/secrets/nag_license /opt/build-mpich.sh
 ENV MPI_HOME="/opt/mpich/${MPICH_VER}/install"
 ENV PATH="${MPI_HOME}/bin:${PATH}"
 
 # Download and build HDF5
+COPY HDF5-NAG-Disable-threads.patch /opt/
 RUN --mount=type=secret,id=nag_license NAG_KUSARI_FILE=/run/secrets/nag_license /opt/build-hdf5.sh
 ENV HDF5_ROOT="/opt/hdf5/${HDF5_VER}/install"
 ENV PATH="${HDF5_ROOT}/bin:${PATH}"
+
+# Download and build Intel MPI Benchmarks
+RUN CC=mpicc /opt/build-imb.sh
 
 # Update bashrc file
 RUN echo "" >> /opt/bashrc

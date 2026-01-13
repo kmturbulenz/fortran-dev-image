@@ -19,6 +19,7 @@ mkdir install
 cd source
 ./configure \
     --prefix=$OMPI_ROOT_DIR/install \
+    --enable-mca-dso \
     --with-hwloc=internal \
     --with-libevent=internal \
     --with-pmix=internal \
