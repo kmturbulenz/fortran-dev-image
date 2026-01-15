@@ -22,7 +22,7 @@ cd source
     --prefix=$MPICH_ROOT_DIR/install \
     --disable-static \
     --with-pic \
-    --with-device=ch4:ucx \
+    --with-device=ch4:ofi \
     2>&1 | tee configure.log
 make -j install 2>&1 | tee make.log
 
