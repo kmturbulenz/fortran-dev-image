@@ -24,6 +24,7 @@ RUN dnf check-update ; \
                    make \
                    oracle-epel-release-el8 \
                    patch \
+                   pinentry \
                    procps-ng \
                    python3.12 \
                    python3.12-devel \
