@@ -17,6 +17,12 @@ rm openmpi-${OMPI_VER}.tar.bz2
 mv openmpi-$OMPI_VER source
 mkdir install
 cd source
+
+EXTRA_CONFIG_FLAGS=""
+if [[ "${BUILD_ARCH}" == "x86_64" ]]; then
+    EXTRA_CONFIG_FLAGS="--with-psm2"
+fi
+
 ./configure \
     --prefix=$OMPI_ROOT_DIR/install \
     --enable-mca-dso \
@@ -27,5 +33,6 @@ cd source
     --with-ucx \
     --with-libfabric \
     --with-tm \
+    ${EXTRA_CONFIG_FLAGS} \
     2>&1 | tee configure.log
 make -j install 2>&1 | tee make.log
