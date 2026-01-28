@@ -25,7 +25,6 @@ cd source
     --with-pmix=internal \
     --disable-oshmem \
     --with-ucx \
-    --with-psm2 \
     --with-libfabric \
     --with-tm \
     2>&1 | tee configure.log

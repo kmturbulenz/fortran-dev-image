@@ -47,20 +47,20 @@ RUN python3 -m pip install --no-cache-dir numpy scipy matplotlib h5py
 
 # Fetch and install updated CMake in /usr/local
 ENV CMAKE_VER="3.31.9"
-ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
+ARG CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-aarch64.tar.gz"
 RUN mkdir /tmp/cmake-install && \
     cd /tmp/cmake-install && \
     wget --no-verbose $CMAKE_URL && \
-    tar -xf cmake-${CMAKE_VER}-linux-x86_64.tar.gz -C /usr/local --strip-components=1 && \
+    tar -xf cmake-${CMAKE_VER}-linux-aarch64.tar.gz -C /usr/local --strip-components=1 && \
     cd / && \
     rm -rf /tmp/cmake-install
 
 # Fetch and install updated Ninja-build in /usr/local
-ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-linux.zip"
+ARG NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-linux-aarch64.zip"
 RUN mkdir /tmp/ninja-install && \
     cd /tmp/ninja-install && \
     wget --no-verbose $NINJA_URL && \
-    unzip ninja-linux.zip -d /usr/local/bin && \
+    unzip ninja-linux-aarch64.zip -d /usr/local/bin && \
     cd / && \
     rm -rf /tmp/ninja-install
 
@@ -126,8 +126,9 @@ LABEL description="GNU compilers with OpenMPI and HDF5 image for building Fortra
 #   - ucx: 1.15.0
 #   - libpsm2: 12.0.1
 #   - libfabric: 1.20.0
+# Aarch64 does not have libpsm2
 RUN dnf -y install gcc-toolset-15 gcc-toolset-15-gcc-gfortran gcc-toolset-15-libubsan-devel ucx-devel-1.15.0-2.el8 && \
-    dnf -y --enablerepo=ol8_codeready_builder install torque-devel libpsm2-devel-11.2.230-1.el8.1 libfabric-devel-1.18.0-1.el8 && \
+    dnf -y --enablerepo=ol8_codeready_builder install torque-devel libfabric-devel-1.18.0-1.el8 && \
     dnf clean all
 
 # CPU architecture for optimizations and default compiler flags
@@ -135,7 +136,7 @@ ENV CC="gcc"
 ENV CXX="g++"
 ENV FC="gfortran"
 
-ENV CPU_ARCH="x86-64-v2"
+ENV CPU_ARCH="armv8.2-a"
 ENV CFLAGS="-march=${CPU_ARCH}"
 ENV CXXFLAGS="-march=${CPU_ARCH}"
 ENV FFLAGS="-march=${CPU_ARCH}"
