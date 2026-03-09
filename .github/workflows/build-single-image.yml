@@ -43,7 +43,7 @@ jobs:
       with:
         fetch-depth: 2
 
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
       name: Set up Docker Buildx
       id: buildx
 
@@ -91,7 +91,7 @@ jobs:
       with:
         fetch-depth: 2
 
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
       name: Set up Docker Buildx
       id: buildx
 
@@ -135,7 +135,7 @@ jobs:
       - build-arm64
     if: ${{ inputs.push_image && needs.build-amd64.result == 'success' }}
     steps:
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
       name: Set up Docker Buildx
 
     - name: Create tag with current date
