@@ -63,7 +63,7 @@ jobs:
           type=sha
           type=raw,prefix=date-,value=${{ steps.date.outputs.date }}
 
-    - uses: docker/login-action@v3
+    - uses: docker/login-action@v4
       name: Login to Github Packages
       with:
         registry: ghcr.io
@@ -111,7 +111,7 @@ jobs:
           type=sha
           type=raw,prefix=date-,value=${{ steps.date.outputs.date }}
 
-    - uses: docker/login-action@v3
+    - uses: docker/login-action@v4
       name: Login to Github Packages
       with:
         registry: ghcr.io
@@ -152,7 +152,7 @@ jobs:
           type=sha
           type=raw,prefix=date-,value=${{ steps.date.outputs.date }}
 
-    - uses: docker/login-action@v3
+    - uses: docker/login-action@v4
       name: Login to Github Packages
       with:
         registry: ghcr.io
