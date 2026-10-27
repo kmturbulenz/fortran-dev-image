@@ -82,7 +82,7 @@ RUN case "$(uname -p)" in \
 COPY build-hdf5.sh /opt/
 COPY build-imb.sh /opt/
 
-ENV HDF5_VER="2.1.1"
+ENV HDF5_VER="2.2.0"
 ENV IMB_VER="2021.11"
 
 
@@ -103,10 +103,10 @@ COPY oneAPI.repo /etc/yum.repos.d/
 #                    gcc gcc-c++ && \
 #     dnf clean all
 RUN dnf -y install gcc gcc-c++ && dnf clean all
-RUN wget --no-verbose https://registrationcenter-download.intel.com/akdlm/IRC_NAS/71180075-e4e3-4c6f-bbbb-19017ed0cf7d/intel-oneapi-toolkit-2026.0.0.198_offline.sh && \
-    chmod +x intel-oneapi-toolkit-2026.0.0.198_offline.sh && \
-    ./intel-oneapi-toolkit-2026.0.0.198_offline.sh -a --silent --eula accept --components intel.oneapi.lin.dpcpp-cpp-compiler:intel.oneapi.lin.ifort-compiler:intel.oneapi.lin.mpi.devel && \
-    rm intel-oneapi-toolkit-2026.0.0.198_offline.sh
+RUN wget --no-verbose https://registrationcenter-download.intel.com/akdlm/IRC_NAS/5996e26b-f48a-42b1-8db0-b002ad0bd8d7/intel-oneapi-toolkit-2026.1.1.33_offline.sh && \
+    chmod +x intel-oneapi-toolkit-2026.1.1.33_offline.sh && \
+    ./intel-oneapi-toolkit-2026.1.1.33_offline.sh -a --silent --eula accept --components intel.oneapi.lin.dpcpp-cpp-compiler:intel.oneapi.lin.ifort-compiler:intel.oneapi.lin.mpi.devel && \
+    rm intel-oneapi-toolkit-2026.1.1.33_offline.sh
 
 # CPU architecture for optimizations and default compiler flags
 ENV CC="icx"
@@ -164,7 +164,7 @@ ENV FFLAGS="-march=${CPU_ARCH}"
 ENV FCFLAGS=$FFLAGS
 
 # Download and build OpenMPI
-ENV OMPI_VER="5.0.10"
+ENV OMPI_VER="5.0.11"
 COPY build-openmpi.sh /opt/
 RUN source scl_source enable gcc-toolset-15 && /opt/build-openmpi.sh
 ENV MPI_HOME="/opt/openmpi/${OMPI_VER}/install"
