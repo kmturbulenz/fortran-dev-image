@@ -18,7 +18,7 @@ else
     exit 1
 fi
 
-git clone --depth 1 https://github.com/llvm/llvm-project.git
+git clone --depth 1 --single-branch --no-tags --branch llvmorg-23.1.4 https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
@@ -30,7 +30,7 @@ cmake -GNinja \
     -DLLVM_TARGETS_TO_BUILD="${TARGETS_TO_BUILD}" \
     -DLLVM_ENABLE_RTTI="ON" \
     ../llvm 2>&1 | tee cmake.log
-ninja -j 2 install 2>&1 | tee ninja.log
+ninja -j 8 install 2>&1 | tee ninja.log
 
 # To reduce the size of the image, only the installed files are kept, the
 # checked out and compiled sources are deleted.
