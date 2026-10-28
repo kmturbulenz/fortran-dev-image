@@ -31,11 +31,11 @@ If you want to build the images yourself locally, the commands are::
     docker build --target llvm-mpich-image -t llvm-mpich-image:latest .
     docker build --network host --secret id=nag_license,src=$NAG_KUSARI_FILE --target nag-mpich-image -t nag-mpich-image:latest .
 
-The ``llvm-mpich-image`` build the latest ``main`` branch of the LLVM
-compilers ``clang``, ``clang++`` and ``flang`` from sources. The build time
-of this image is thus very large (hours) compared to the two others. The
-reason this builds from source is that the ``flang`` receive very frequent
-updates and this allows us to have the very latest compilers available.
+The ``llvm-mpich-image`` build the LLVM compilers ``clang``, ``clang++`` and
+``flang`` from sources. The build time of this image is thus very large
+(hours) compared to the two others. The reason this builds from source is
+that the ``flang`` receive very frequent updates and this allows us to have
+the very latest compilers available.
 
 The ``nag-mpich-image`` image require you to hold a license for the NAG
 Fortran compiler for building the image. The path to the license file should be
